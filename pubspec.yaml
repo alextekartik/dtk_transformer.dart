@@ -15,7 +15,7 @@ dependencies:
   tekartik_html:
     git: https://github.com/alextekartik/tekartik_html.dart
   tekartik_barback:
-      git: https://github.com/alextekartik/tekartik_barback.dart
+    git: https://github.com/alextekartik/tekartik_barback.dart
 dev_dependencies:
   test: any
   dev_test: any

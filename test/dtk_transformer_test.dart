@@ -1,16 +1,11 @@
-@TestOn("vm")
 library transformer_test;
 
 import 'package:tekartik_html/html.dart';
 
-import 'package:path/path.dart';
-import 'dart:io';
+import 'package:dev_test/test.dart';
 import 'dart:async';
-import 'package:tekartik_html_transformer/src/dtk_transformer_impl.dart';
-import 'io_test_common.dart';
+import 'package:tekartik_dtk_transformer/src/dtk_transformer_impl.dart';
 import 'package:tekartik_barback/transformer_memory.dart';
-//import 'package:tekartik_io_tools/pub_utils.dart';
-import 'builder_test_common.dart';
 
 String PACKAGE_NAME = "terkartik_html_transformer";
 
