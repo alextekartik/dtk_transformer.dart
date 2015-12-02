@@ -2,16 +2,6 @@ name: tekartik_dtk_transformer
 version: 0.1.0
 description: Simple scss transformer
 dependencies:
-  barback: any
-  logging: any
-  markdown: any
-  path: any
-#  tekartik_asset_jquery:
-#    path: ../../../dart-assets/asset_jquery
-#  tekartik_asset_jquerymobile:
-#    path: ../../../dart-assets/asset_jquerymobile
-#  tekartik_common:
-#    path: ../../common
   tekartik_html:
     git: https://github.com/alextekartik/tekartik_html.dart
   tekartik_barback:
@@ -19,5 +9,5 @@ dependencies:
 dev_dependencies:
   test: any
   dev_test: any
-# transformers:
-# - tekartik_html_transformer
+  tekartik_pub:
+    git: git://github.com/tekartik/tekartik_pub.dart

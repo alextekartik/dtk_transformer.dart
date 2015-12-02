@@ -93,7 +93,8 @@ defineTests(MemoryTransformerContext ctx) {
     });
 
     test('include_multi_element', () async {
-      String include = '<div><meta property="dtk-include" content="included.html"></div>';
+      String include =
+          '<div><meta property="dtk-include" content="included.html"></div>';
 
       AssetId assetId = ctx.addStringAsset('dtk-include.html', include);
 
@@ -102,10 +103,25 @@ defineTests(MemoryTransformerContext ctx) {
       Element element = html.createElementHtml(include, noValidate: true);
       // Just to set the transform but not used!
 
-
       await transformer.handleInclude(transform, assetId, element);
       expect(element.outerHtml, '<div><p>element1</p><p>element2</p></div>');
+    });
 
+    test('include_sub_element', () async {
+      String include =
+          '<div><meta property="dtk-include" content="included.html"></div>';
+
+      AssetId assetId = ctx.addStringAsset('dtk-include.html', include);
+
+      ctx.addStringAsset('included.html',
+          '<meta property="dtk-include" content="sub_included.html">');
+      ctx.addStringAsset('sub_included.html', '<p>element</p>');
+      Transform transform = ctx.newTransform(null);
+      Element element = html.createElementHtml(include, noValidate: true);
+      // Just to set the transform but not used!
+
+      await transformer.handleInclude(transform, assetId, element);
+      expect(element.outerHtml, '<div><p>element</p></div>');
     });
 
     test('read_include', () async {

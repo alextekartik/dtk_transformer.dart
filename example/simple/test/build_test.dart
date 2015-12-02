@@ -1,15 +1,9 @@
 @TestOn("vm")
 library tekartik_uppercase_transformer_test;
 
-import 'package:tekartik_transformer/transformer_memory.dart';
-//import 'package:barback/barback.dart' show Asset, AssetSet, AssetId;
 import 'package:tekartik_pub/pub.dart';
-//import 'package:tekartik_common/project_utils.dart';
-//import 'transformer_test.dart' as _test;
 import 'dart:async';
 import 'package:dev_test/test.dart';
-import 'package:process_run/process_run.dart';
-import 'package:process_run/dartbin.dart';
 import 'dart:io';
 import 'package:path/path.dart';
 import 'dart:mirrors';
