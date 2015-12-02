@@ -6,6 +6,7 @@ dependencies:
     git: https://github.com/alextekartik/tekartik_html.dart
   tekartik_barback:
     git: https://github.com/alextekartik/tekartik_barback.dart
+  csslib: any
 dev_dependencies:
   test: any
   dev_test: any

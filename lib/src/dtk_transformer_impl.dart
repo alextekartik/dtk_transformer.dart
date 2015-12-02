@@ -6,6 +6,8 @@ import 'package:path/path.dart';
 import 'package:tekartik_html/html_html5lib.dart';
 import 'package:tekartik_html/html.dart';
 import 'package:tekartik_html/util/html_tidy.dart';
+import 'package:csslib/parser.dart';
+import 'package:csslib/visitor.dart';
 
 HtmlProvider html = htmlProviderHtml5Lib;
 
@@ -21,7 +23,53 @@ class DtkTransformer extends Object
   // ctr
   DtkTransformer.asPlugin([this.settings]);
 
-  handleInclude(Transform transform, AssetId assetId, Element element) async {
+  handleElement(Transform transform, AssetId assetId, Element element) async {
+    // handle styles
+    // Resolve css
+    _handleStyle(Element element) async {
+      //print(element.text);
+      String existingCss = element.text;
+      StyleSheet styleSheet = compile(existingCss, polyfill: true);
+      CssPrinter printer = new CssPrinter();
+      bool hasImport = false;
+      _resolveImport(AssetId assetId, StyleSheet styleSheet) async {
+        List<TreeNode> childNodes = new List.from(styleSheet.topLevels);
+        for (TreeNode node in childNodes) {
+          if (node is ImportDirective) {
+            hasImport = true;
+            String path =
+                posix.normalize(join(posix.dirname(assetId.path), node.import));
+            AssetId importedAssetId = new AssetId(assetId.package, path);
+            if (await transform.hasInput(importedAssetId)) {
+              StyleSheet importedStyleSheet = compile(
+                  await transform.readInputAsString(importedAssetId),
+                  polyfill: true);
+
+              await _resolveImport(importedAssetId, importedStyleSheet);
+
+              int index = styleSheet.topLevels.indexOf(node);
+              styleSheet.topLevels
+                ..removeAt(index)
+                ..insertAll(index, importedStyleSheet.topLevels);
+            }
+          }
+        }
+      }
+      await _resolveImport(assetId, styleSheet);
+      printer.visitTree(styleSheet, pretty: false);
+      String newCss = printer.toString();
+      if (hasImport || newCss.length < existingCss.length) {
+        element.text = newCss;
+      }
+    }
+    if (element.tagName == 'style') {
+      await _handleStyle(element);
+    }
+    ElementList styleElements = element.queryAll(byTag: 'style');
+    for (Element element in styleElements) {
+      await _handleStyle(element);
+    }
+
     _handleDtkInclude(Element element) async {
       if (element.attributes['property'] == 'dtk-include') {
         String included = element.attributes['content'];
@@ -45,13 +93,13 @@ class DtkTransformer extends Object
               html.createElementHtml(includedContent, noValidate: true);
         } catch (e) {
           multiElement = true;
-          includedElement =
-              html.createElementHtml('<tekartik-dtk-merge>${includedContent}</tekartik-dtk-merge>', noValidate: true);
+          includedElement = html.createElementHtml(
+              '<tekartik-dtk-merge>${includedContent}</tekartik-dtk-merge>',
+              noValidate: true);
         }
 
         // Save parent (as element will be removed
         Element parent = element.parent;
-
 
         // Insert first so that it has a parent
         parent.children
@@ -59,22 +107,18 @@ class DtkTransformer extends Object
           ..insert(index, includedElement);
 
         // handle recursively first
-        await handleInclude(transform, includedAssetId, includedElement);
+        await handleElement(transform, includedAssetId, includedElement);
 
         // multi element 'un-merge'
         if (multiElement) {
           // save a copy
           List<Element> children = new List.from(includedElement.children);
 
-          parent.children
-            ..removeAt(index);
+          parent.children..removeAt(index);
           for (Element child in children) {
-            parent.children
-              ..insert(index++, child);
+            parent.children..insert(index++, child);
           }
         }
-
-
       }
     }
     if (element.tagName == 'meta') {
@@ -94,8 +138,8 @@ class DtkTransformer extends Object
     // to meta content
     Document doc = html.createDocument(html: content);
 
-    await handleInclude(transform, transform.primaryInputId, doc.head);
-    await handleInclude(transform, transform.primaryInputId, doc.body);
+    await handleElement(transform, transform.primaryInputId, doc.head);
+    await handleElement(transform, transform.primaryInputId, doc.body);
 
     transform.logger.info("in ${transform.primaryInputId}");
     transform.logger.info("in $content");
@@ -121,7 +165,8 @@ class DtkTransformer extends Object
   // ignore _file.html and _file.part.html
   bool isPrivatePath(String path) {
     String basename = posix.basename(path);
-    return (basename.startsWith('_') || (withoutExtension(basename).endsWith('.part')));
+    return (basename.startsWith('_') ||
+        (withoutExtension(basename).endsWith('.part')));
   }
 
   bool _isGeneratedFile(String path) {

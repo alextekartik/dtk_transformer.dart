@@ -62,6 +62,16 @@ defineTests(MemoryTransformerContext ctx) {
               '<body></body>\n'
               '</html>');
     });
+
+    test('basic', () async {
+      String content = '<div></div>';
+      AssetId assetId = ctx.addStringAsset('basic.html', content);
+      Transform transform = ctx.newTransform(null);
+      Element element = html.createElementHtml(content, noValidate: true);
+      await transformer.handleElement(transform, assetId, element);
+      expect(element.outerHtml, content);
+    });
+
     test('include_no_parent', () async {
       String include = '<meta property="dtk-include" content="included.html">';
 
@@ -73,7 +83,7 @@ defineTests(MemoryTransformerContext ctx) {
       // Just to set the transform but not used!
 
       try {
-        await transformer.handleInclude(transform, assetId, element);
+        await transformer.handleElement(transform, assetId, element);
       } catch (_) {}
     });
 
@@ -88,7 +98,7 @@ defineTests(MemoryTransformerContext ctx) {
       Element element = html.createElementHtml(include, noValidate: true);
       // Just to set the transform but not used!
 
-      await transformer.handleInclude(transform, assetId, element);
+      await transformer.handleElement(transform, assetId, element);
       expect(element.outerHtml, '<div><p>Simple content</p></div>');
     });
 
@@ -103,7 +113,7 @@ defineTests(MemoryTransformerContext ctx) {
       Element element = html.createElementHtml(include, noValidate: true);
       // Just to set the transform but not used!
 
-      await transformer.handleInclude(transform, assetId, element);
+      await transformer.handleElement(transform, assetId, element);
       expect(element.outerHtml, '<div><p>element1</p><p>element2</p></div>');
     });
 
@@ -120,7 +130,7 @@ defineTests(MemoryTransformerContext ctx) {
       Element element = html.createElementHtml(include, noValidate: true);
       // Just to set the transform but not used!
 
-      await transformer.handleInclude(transform, assetId, element);
+      await transformer.handleElement(transform, assetId, element);
       expect(element.outerHtml, '<div><p>element</p></div>');
     });
 
@@ -143,11 +153,37 @@ defineTests(MemoryTransformerContext ctx) {
               '  <meta property="name" content="Hello">\n'
               '</head>\n'
               '<body>\n'
-              '  <p>\n'
-              '    World\n'
-              '  </p>\n'
+              '  <p>World</p>\n'
               '</body>\n'
               '</html>');
+    });
+
+    test('style_short', () async {
+      String content = '<style>body{opacity:0}</style>';
+      AssetId assetId = ctx.addStringAsset('basic.html', content);
+      Transform transform = ctx.newTransform(null);
+      Element element = html.createElementHtml(content, noValidate: true);
+      await transformer.handleElement(transform, assetId, element);
+      expect(element.outerHtml, '<style>body{opacity:0}</style>');
+    });
+
+    test('style_long', () async {
+      String content = '<style>body {  opacity: 0;  }</style>';
+      AssetId assetId = ctx.addStringAsset('basic.html', content);
+      Transform transform = ctx.newTransform(null);
+      Element element = html.createElementHtml(content, noValidate: true);
+      await transformer.handleElement(transform, assetId, element);
+      expect(element.outerHtml, '<style>body { opacity: 0; }</style>');
+    });
+
+    test('style_import', () async {
+      String content = '<style>@import url(part.html)";</style>';
+      AssetId assetId = ctx.addStringAsset('basic.html', content);
+      ctx.addStringAsset('part.html', 'body{opacity:0}');
+      Transform transform = ctx.newTransform(null);
+      Element element = html.createElementHtml(content, noValidate: true);
+      await transformer.handleElement(transform, assetId, element);
+      expect(element.outerHtml, '<style>body { opacity: 0; }</style>');
     });
   });
   //useVMConfiguration();
