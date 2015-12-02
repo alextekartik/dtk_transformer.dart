@@ -33,16 +33,48 @@ class DtkTransformer extends Object
         String includedContent =
             await transform.readInputAsString(includedAssetId);
 
-        Element includedElement =
-            html.createElementHtml(includedContent, noValidate: true);
+        bool multiElement = false;
+        Element includedElement;
+
+        // where to include
+        int index = element.childIndex;
+
+        // try to parse if it fails, wrap it
+        try {
+          includedElement =
+              html.createElementHtml(includedContent, noValidate: true);
+        } catch (e) {
+          multiElement = true;
+          includedElement =
+              html.createElementHtml('<tekartik-dtk-merge>${includedContent}</tekartik-dtk-merge>', noValidate: true);
+        }
+
+        // Save parent (as element will be removed
+        Element parent = element.parent;
+
+
+        // Insert first so that it has a parent
+        parent.children
+          ..removeAt(index)
+          ..insert(index, includedElement);
 
         // handle recursively first
         await handleInclude(transform, includedAssetId, includedElement);
 
-        int index = element.childIndex;
-        element.parent.children
-          ..removeAt(index)
-          ..insert(index, includedElement);
+        // multi element 'un-merge'
+        if (multiElement) {
+          // save a copy
+          List<Element> children = new List.from(includedElement.children);
+
+          parent.children
+            ..removeAt(index);
+          for (Element child in children) {
+            parent.children
+              ..insert(index++, child);
+          }
+        }
+
+
       }
     }
     if (element.tagName == 'meta') {
@@ -86,8 +118,10 @@ class DtkTransformer extends Object
     return _isPrimaryPath(path);
   }
 
+  // ignore _file.html and _file.part.html
   bool isPrivatePath(String path) {
-    return (posix.basename(path).startsWith('_'));
+    String basename = posix.basename(path);
+    return (basename.startsWith('_') || (withoutExtension(basename).endsWith('.part')));
   }
 
   bool _isGeneratedFile(String path) {
